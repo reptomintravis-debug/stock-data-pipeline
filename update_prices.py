@@ -3,11 +3,11 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 
-# 1. 対象8銘柄の厳格な定義
+# 1. 対象8銘柄の定義
 TICKERS = ['8035.T', '4186.T', '5803.T', '6508.T', '6504.T', '5016.T', '6920.T', '6857.T']
 CSV_PATH = 'adjusted_ohlc_daily_prices.csv'
 
-# 既存のCSV列定義（33列）
+# 2. 列構造（33列）の定義
 COLUMNS = ['Date']
 for ticker in TICKERS:
     code = ticker.split('.')[0]
@@ -18,7 +18,7 @@ def main():
         print(f"Error: {CSV_PATH} not found.")
         return
 
-    # 既存データの読み込み
+    # 既存データ読込
     df_existing = pd.read_csv(CSV_PATH)
     df_existing['Date'] = pd.to_datetime(df_existing['Date'])
     last_date = df_existing['Date'].max()
@@ -26,75 +26,67 @@ def main():
     start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d')
 
+    print(f"Last date in CSV: {last_date.strftime('%Y-%m-%d')}")
+    print(f"Fetching range: {start_date} to {end_date}")
+
     if start_date > end_date:
         print("Data is already up to date.")
         return
 
-    print(f"Fetching data from {start_date} to {end_date}...")
+    # 銘柄ごとに個別に取得して日付キーで結合（マルチインデックス起因のエラー回避）
+    all_dates_data = {}
 
-    # Yahoo Financeからデータ取得
-    data = yf.download(TICKERS, start=start_date, end=datetime.now() + timedelta(days=1), group_by='ticker')
+    for ticker in TICKERS:
+        code = ticker.split('.')[0]
+        try:
+            # 1銘柄ずつ取得
+            df_t = yf.download(ticker, start=start_date, end=datetime.now() + timedelta(days=1), progress=False)
+            if df_t.empty:
+                continue
 
-    new_rows = []
-    # 取得した日付のリストを取り出す
-    dates = data.index.unique()
+            # MultiIndexカラム対策
+            if isinstance(df_t.columns, pd.MultiIndex):
+                df_t.columns = df_t.columns.get_level_values(0)
 
-    for d in dates:
-        date_str = d.strftime('%Y-%m-%d')
-        if date_str <= last_date.strftime('%Y-%m-%d'):
-            continue
-        
-        row_dict = {'Date': date_str}
-        has_data = False
+            for idx, row in df_t.iterrows():
+                date_str = idx.strftime('%Y-%m-%d')
+                if date_str <= last_date.strftime('%Y-%m-%d'):
+                    continue
 
-        for ticker in TICKERS:
-            code = ticker.split('.')[0]
-            try:
-                if len(TICKERS) > 1:
-                    df_ticker = data[ticker]
-                else:
-                    df_ticker = data
+                if date_str not in all_dates_data:
+                    all_dates_data[date_str] = {'Date': date_str}
 
-                if d in df_ticker.index:
-                    open_val = df_ticker.loc[d, 'Open']
-                    high_val = df_ticker.loc[d, 'High']
-                    low_val = df_ticker.loc[d, 'Low']
-                    close_val = df_ticker.loc[d, 'Close']
+                all_dates_data[date_str][f'{code}_Open'] = round(float(row['Open']), 2) if pd.notna(row['Open']) else None
+                all_dates_data[date_str][f'{code}_High'] = round(float(row['High']), 2) if pd.notna(row['High']) else None
+                all_dates_data[date_str][f'{code}_Low'] = round(float(row['Low']), 2) if pd.notna(row['Low']) else None
+                all_dates_data[date_str][f'{code}_Close'] = round(float(row['Close']), 2) if pd.notna(row['Close']) else None
 
-                    if pd.notna(close_val):
-                        row_dict[f'{code}_Open'] = round(float(open_val), 2)
-                        row_dict[f'{code}_High'] = round(float(high_val), 2)
-                        row_dict[f'{code}_Low'] = round(float(low_val), 2)
-                        row_dict[f'{code}_Close'] = round(float(close_val), 2)
-                        has_data = True
-                    else:
-                        row_dict[f'{code}_Open'] = None
-                        row_dict[f'{code}_High'] = None
-                        row_dict[f'{code}_Low'] = None
-                        row_dict[f'{code}_Close'] = None
-                else:
-                    row_dict[f'{code}_Open'] = None
-                    row_dict[f'{code}_High'] = None
-                    row_dict[f'{code}_Low'] = None
-                    row_dict[f'{code}_Close'] = None
-            except Exception as e:
-                print(f"Error processing {ticker} for {date_str}: {e}")
+        except Exception as e:
+            print(f"Error fetching {ticker}: {e}")
 
-        if has_data:
-            new_rows.append(row_dict)
+    if not all_dates_data:
+        print("No new valid data fetched.")
+        return
 
-    if new_rows:
-        df_new = pd.DataFrame(new_rows)
-        # 厳格な33列の並び順を保証
-        df_new = df_new.reindex(columns=COLUMNS)
-        
-        # 既存データと結合して書き出し
-        df_final = pd.concat([df_existing, df_new], ignore_index=True)
-        df_final['Date'] = df_final['Date'].dt.strftime('%Y-%m-%d')
-        df_final.to_csv(CSV_PATH, index=False)
-        print(f"Successfully appended {len(new_rows)} rows.")
-    else:
-        print("No new data to append.")
+    # リスト化してDataFrameを作成
+    new_rows = list(all_dates_data.values())
+    df_new = pd.DataFrame(new_rows)
+
+    # 不足列をNoneで補完しつつ、厳密に33列に揃える
+    for col in COLUMNS:
+        if col not in df_new.columns:
+            df_new[col] = None
+
+    df_new = df_new[COLUMNS]
+
+    # 日付昇順ソート
+    df_new = df_new.sort_values('Date').reset_index(drop=True)
+
+    # 結合してCSV出力
+    df_existing['Date'] = df_existing['Date'].dt.strftime('%Y-%m-%d')
+    df_final = pd.concat([df_existing, df_new], ignore_index=True)
+    df_final.to_csv(CSV_PATH, index=False)
+    print(f"Successfully appended {len(df_new)} row(s).")
 
 if __name__ == '__main__':
     main()

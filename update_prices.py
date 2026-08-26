@@ -4,7 +4,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 
 # 1. 対象8銘柄の定義
-TICKERS = ['8035.T', '4186.T', '5803.T', '6508.T', '6504.T', '5016.T', '6920.T', '6857.T']
+TICKERS = ['8035.T', '4186.T', '5803.T', '6508.T', '6504.T', '5016.T', '6920.T', '6857.T', '5801.T', '5802.T']
 CSV_PATH = 'adjusted_ohlc_daily_prices.csv'
 
 # 2. 列構造（33列）の定義

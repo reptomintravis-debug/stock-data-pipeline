@@ -25,8 +25,8 @@ jobs:
           pip install pandas yfinance
 
       - name: Run update script
-        run: python backfill.py
-
+        run: python update_prices.py
+        
       - name: Commit and push updated CSV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -25,7 +25,7 @@ jobs:
           pip install pandas yfinance
 
       - name: Run update script
-        run: python update_prices.py
+        run: python backfill.py
 
       - name: Commit and push updated CSV
         env:

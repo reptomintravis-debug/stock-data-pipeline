@@ -24,7 +24,7 @@ def main():
     last_date = df_existing['Date'].max()
     
     start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
-    end_date = datetime.now().strftime('%Y-%m-%d')
+    end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
 
     print(f"Last date in CSV: {last_date.strftime('%Y-%m-%d')}")
     print(f"Fetching range: {start_date} to {end_date}")

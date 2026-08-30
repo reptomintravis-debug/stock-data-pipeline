@@ -23,7 +23,7 @@ def main():
     df_existing['Date'] = pd.to_datetime(df_existing['Date'])
     last_date = df_existing['Date'].max()
     
-    start_date = "2025-03-01"
+    start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
 
     print(f"Last date in CSV: {last_date.strftime('%Y-%m-%d')}")
@@ -50,8 +50,8 @@ def main():
 
             for idx, row in df_t.iterrows():
                 date_str = idx.strftime('%Y-%m-%d')
-               # if date_str <= last_date.strftime('%Y-%m-%d'):
-#     continue
+               if date_str <= last_date.strftime('%Y-%m-%d'):
+     continue
 
                 if date_str not in all_dates_data:
                     all_dates_data[date_str] = {'Date': date_str}

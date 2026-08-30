@@ -51,7 +51,7 @@ def main():
             for idx, row in df_t.iterrows():
                 date_str = idx.strftime('%Y-%m-%d')
                if date_str <= last_date.strftime('%Y-%m-%d'):
-     continue
+                   continue
 
                 if date_str not in all_dates_data:
                     all_dates_data[date_str] = {'Date': date_str}

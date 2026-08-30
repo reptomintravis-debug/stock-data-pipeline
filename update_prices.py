@@ -85,6 +85,7 @@ def main():
     # 結合してCSV出力
     df_existing['Date'] = df_existing['Date'].dt.strftime('%Y-%m-%d')
     df_final = pd.concat([df_existing, df_new], ignore_index=True)
+　　df_final = df_final.drop_duplicates(subset=['Date'], keep='first')
     df_final.to_csv(CSV_PATH, index=False)
     print(f"Successfully appended {len(df_new)} row(s).")
 

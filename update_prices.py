@@ -48,10 +48,10 @@ def main():
             if isinstance(df_t.columns, pd.MultiIndex):
                 df_t.columns = df_t.columns.get_level_values(0)
 
-            for idx, row in df_t.iterrows():
-                date_str = idx.strftime('%Y-%m-%d')
-               if date_str <= last_date.strftime('%Y-%m-%d'):
-                   continue
+    for idx, row in df_t.iterrows():
+        date_str = idx.strftime('%Y-%m-%d')
+        if date_str <= last_date.strftime('%Y-%m-%d'):
+            continue
 
                 if date_str not in all_dates_data:
                     all_dates_data[date_str] = {'Date': date_str}

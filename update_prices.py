@@ -41,6 +41,10 @@ def main():
         try:
             # 1銘柄ずつ取得
             df_t = yf.download(ticker, start=start_date, end=datetime.now() + timedelta(days=1), progress=False)
+code = ticker.split('.')[0]
+        try:
+            # 1銘柄ずつ取得
+            df_t = yf.download(ticker, start=start_date, end=datetime.now() + timedelta(days=1), progress=False)
             if df_t.empty:
                 continue
 
@@ -48,10 +52,10 @@ def main():
             if isinstance(df_t.columns, pd.MultiIndex):
                 df_t.columns = df_t.columns.get_level_values(0)
 
-    for idx, row in df_t.iterrows():
-        date_str = idx.strftime('%Y-%m-%d')
-        if date_str <= last_date.strftime('%Y-%m-%d'):
-            continue
+            for idx, row in df_t.iterrows():
+                date_str = idx.strftime('%Y-%m-%d')
+                if date_str <= last_date.strftime('%Y-%m-%d'):
+                    continue
 
                 if date_str not in all_dates_data:
                     all_dates_data[date_str] = {'Date': date_str}
@@ -63,7 +67,6 @@ def main():
 
         except Exception as e:
             print(f"Error fetching {ticker}: {e}")
-
     if not all_dates_data:
         print("No new valid data fetched.")
         return

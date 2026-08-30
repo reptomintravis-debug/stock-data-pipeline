@@ -1,4 +1,4 @@
-import os
+これが現状だimport os
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
@@ -80,17 +80,18 @@ def main():
     df_new = df_new[COLUMNS]
 
     # 日付昇順ソート
-df_new = df_new.sort_values('Date').reset_index(drop=True)
+
 
 # 結合して重複削除し、CSV出力
-df_existing['Date'] = pd.to_datetime(df_existing['Date']).dt.strftime('%Y-%m-%d')
-df_new['Date'] = pd.to_datetime(df_new['Date']).dt.strftime('%Y-%m-%d')
+date_col = df_existing.columns[0]
+
+df_existing[date_col] = pd.to_datetime(df_existing[date_col]).dt.strftime('%Y-%m-%d')
+if not df_new.empty:
+    df_new[date_col] = pd.to_datetime(df_new[date_col]).dt.strftime('%Y-%m-%d')
 
 df_final = pd.concat([df_existing, df_new], ignore_index=True)
-# 日付で重複を排除（後ろの新しいデータを優先）
-df_final = df_final.drop_duplicates(subset=['Date'], keep='last')
-df_final = df_final.sort_values('Date').reset_index(drop=True)
-
+df_final = df_final.drop_duplicates(subset=[date_col], keep='last')
+df_final = df_final.sort_values(date_col).reset_index(drop=True)
 df_final.to_csv(CSV_PATH, index=False)
 print(f"Successfully updated. Total rows: {len(df_final)}")
     print(f"Successfully appended {len(df_new)} row(s).")
